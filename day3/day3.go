@@ -87,3 +87,123 @@ func Part1() {
 	}
 	fmt.Println(sum)
 }
+
+// seekNumber takes an x coordinate of a digit and seeks left and right to get the entire value of the number, and the x coordinate of the last digit
+func seekNumber(line string, x int) (int, int) {
+	strNum := string(line[x])
+	rightEdge := x
+
+	// seek left
+	for i := x - 1; i >= 0; i-- {
+		c := line[i]
+		if c >= '0' && c <= '9' {
+			strNum = string(c) + strNum
+		} else {
+			break
+		}
+	}
+
+	// seek right
+	for i := x + 1; i <= len(line)-1; i++ {
+		c := line[i]
+		if c >= '0' && c <= '9' {
+			strNum = strNum + string(c)
+			rightEdge = i
+		} else {
+			break
+		}
+	}
+
+	value, err := strconv.Atoi(strNum)
+	if err != nil {
+		panic(err)
+	}
+	return value, rightEdge
+}
+
+// gearValue returns the value of a gear (*) at the given x,y coord
+func gearValue(matrix []string, x int, y int) int {
+
+	var neighbors []int
+	leftEdge := max(0, x-1)
+	rightEdge := min(len(matrix[0])-1, x+1)
+
+	if y != 0 {
+		// check top
+		for i, c := range matrix[y-1][leftEdge:rightEdge+1] {
+			if c >= '0' && c <= '9' {
+				fmt.Printf("seekNumber at %d, %d\n", x, y-1)
+				value, lastPlace := seekNumber(matrix[y-1], x+i-1)
+				neighbors = append(neighbors, value)
+
+				// avoid adding the same number twice
+				if lastPlace >= x {
+					break
+				}
+			}
+		}
+	}
+
+	if x != 0 {
+		// check left
+		c := matrix[y][x-1]
+		if c >= '0' && c <= '9' {
+			fmt.Printf("seekNumber at %d, %d\n", x-1, y)
+			value, _ := seekNumber(matrix[y], x-1)
+			neighbors = append(neighbors, value)
+		}
+	}
+
+	if x != len(matrix[0])-1 {
+		// check right
+		c := matrix[y][x+1]
+		if c >= '0' && c <= '9' {
+			fmt.Printf("seekNumber at %d, %d\n", x+1, y)
+			value, _ := seekNumber(matrix[y], x+1)
+			neighbors = append(neighbors, value)
+		}
+	}
+
+	if y != len(matrix)-1 {
+		// check bottom
+		for i, c := range matrix[y+1][leftEdge:rightEdge+1] {
+			if c >= '0' && c <= '9' {
+				fmt.Printf("seekNumber at %d, %d\n", x+i-1, y+1)
+				value, lastPlace := seekNumber(matrix[y+1], x+i-1)
+				neighbors = append(neighbors, value)
+
+				// avoid adding the same number twice
+				if lastPlace >= x {
+					break
+				}
+			}
+		}
+	}
+
+	if len(neighbors) > 1 {
+		fmt.Printf("Valid gear at %d, %d. Neighbors: %v\n", x, y, neighbors)
+		result := 1
+		for _, n := range neighbors {
+			result *= n
+		}
+		return result
+	}
+	return 0
+}
+
+func Part2() {
+	matrix := getMatrix()
+
+	sum := 0
+
+	for y, line := range matrix {
+		for x, c := range line {
+			if c == '*' {
+				fmt.Printf("Found * at %d, %d\n", x, y)
+				sum += gearValue(matrix, x, y)
+			}
+		}
+	}
+
+	fmt.Println(sum)
+}
